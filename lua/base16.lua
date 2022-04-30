@@ -1,56 +1,41 @@
-local function prefix_color(color)
-    if color:find("#", 1, true) == 1 then
-      return color
-    else
-      return "#" .. color
-    end
-end
-
-local function highlight(group, guifg, guibg, attr, guisp)
-   local parts = { group }
-   if guifg then
-      table.insert(parts, "guifg=" .. prefix_color(guifg))
+local function highlight(group, guifg, guibg, sp, sp_color)
+   local hl = {
+      fg = guifg,
+      bg = guibg,
+      special = sp_color,
+   }
+   if sp ~= nil and sp ~= "none" then
+      hl[sp] = true
    end
-   if guibg then
-      table.insert(parts, "guibg=" .. prefix_color(guibg))
-   end
-   if attr then
-      table.insert(parts, "gui=" .. attr)
-   end
-   if guisp then
-      table.insert(parts, "guisp=" .. prefix_color(guisp))
-   end
-
-   -- nvim.ex.highlight(parts)
-   vim.api.nvim_command("highlight " .. table.concat(parts, " "))
+   vim.api.nvim_set_hl(0, group, hl)
 end
 
 -- Modified from https://github.com/chriskempson/base16-vim
 local function apply_base16_theme(theme)
    -- Neovim terminal colours
    if vim.fn.has "nvim" then
-      vim.g.terminal_color_0 = prefix_color(theme.base00)
-      vim.g.terminal_color_1 = prefix_color(theme.base08)
-      vim.g.terminal_color_2 = prefix_color(theme.base0B)
-      vim.g.terminal_color_3 = prefix_color(theme.base0A)
-      vim.g.terminal_color_4 = prefix_color(theme.base0D)
-      vim.g.terminal_color_5 = prefix_color(theme.base0E)
-      vim.g.terminal_color_6 = prefix_color(theme.base0C)
-      vim.g.terminal_color_7 = prefix_color(theme.base05)
-      vim.g.terminal_color_8 = prefix_color(theme.base03)
-      vim.g.terminal_color_9 = prefix_color(theme.base08)
-      vim.g.terminal_color_10 = prefix_color(theme.base0B)
-      vim.g.terminal_color_11 = prefix_color(theme.base0A)
-      vim.g.terminal_color_12 = prefix_color(theme.base0D)
-      vim.g.terminal_color_13 = prefix_color(theme.base0E)
-      vim.g.terminal_color_14 = prefix_color(theme.base0C)
-      vim.g.terminal_color_15 = prefix_color(theme.base07)
+      vim.g.terminal_color_0 = "#" .. theme.base00
+      vim.g.terminal_color_1 = "#" .. theme.base08
+      vim.g.terminal_color_2 = "#" .. theme.base0B
+      vim.g.terminal_color_3 = "#" .. theme.base0A
+      vim.g.terminal_color_4 = "#" .. theme.base0D
+      vim.g.terminal_color_5 = "#" .. theme.base0E
+      vim.g.terminal_color_6 = "#" .. theme.base0C
+      vim.g.terminal_color_7 = "#" .. theme.base05
+      vim.g.terminal_color_8 = "#" .. theme.base03
+      vim.g.terminal_color_9 = "#" .. theme.base08
+      vim.g.terminal_color_10 = "#" .. theme.base0B
+      vim.g.terminal_color_11 = "#" .. theme.base0A
+      vim.g.terminal_color_12 = "#" .. theme.base0D
+      vim.g.terminal_color_13 = "#" .. theme.base0E
+      vim.g.terminal_color_14 = "#" .. theme.base0C
+      vim.g.terminal_color_15 = "#" .. theme.base07
       if vim.o.background == "light" then
-         vim.g.terminal_color_background = prefix_color(theme.base05)
-         vim.g.terminal_color_foreground = prefix_color(theme.base0B)
+         vim.g.terminal_color_background = "#" .. theme.base05
+         vim.g.terminal_color_foreground = "#" .. theme.base0B
       else
-         vim.g.terminal_color_background = prefix_color(theme.base00)
-         vim.g.terminal_color_foreground = prefix_color(theme.base0E)
+         vim.g.terminal_color_background = "#" .. theme.base00
+         vim.g.terminal_color_foreground = "#" .. theme.base0E
       end
    end
 
@@ -218,28 +203,13 @@ end
 
 return setmetatable({
    themes = function(name)
-      local path = "lua/themes/" .. name .. "-base16.lua"
-      local files = vim.api.nvim_get_runtime_file(path, true)
-      local theme_array
-      if #files == 0 then
-         error("No such base16 theme: " .. name)
-      elseif #files == 1 then
-         theme_array = dofile(files[1])
+      name = "themes/" .. name .. "-base16"
+      local present, theme_array = pcall(require, name)
+      if present then
+         return theme_array
       else
-         local nvim_base_pattern = "nvim%-base16%.lua/lua/themes"
-         local valid_file = false
-         for _, file in ipairs(files) do
-            if not file:find(nvim_base_pattern) then
-               theme_array = dofile(file)
-               valid_file = true
-            end
-         end
-         if not valid_file then
-            -- multiple files but in startup repo shouldn't happen so just use first one
-            theme_array = dofile(files[1])
-         end
+         error("No such base16 theme: " .. name)
       end
-      return theme_array
    end,
    apply_theme = apply_base16_theme,
    theme_from_array = function(array)
